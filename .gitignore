@@ -1,3 +1,7 @@
+# Large runtime binaries
+public/files/root/Data/Platform/Distribution/RuntimeDependencies/libcef.dll
+public/files/root/Data/Platform/Distribution/RuntimeDependencies/libnode.dll
+
 # Logs
 logs
 *.log
