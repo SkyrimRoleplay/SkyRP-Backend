@@ -3,7 +3,7 @@
 /**
  * One-time (and subsequent) setup for the Frostfall-Client source directory.
  *
- *   First run  → git clone  https://github.com/T3CC4/Frostfall-Client.git  sources/client/
+ *   First run  → git clone  https://github.com/F02K/Frostfall-Client.git  sources/client/
  *   Later runs → git pull --ff-only  (fast-forward only, refuse dirty merges)
  *
  * After the clone / pull the merge pipeline runs automatically so that
@@ -17,7 +17,7 @@ const { execFileSync } = require('child_process')
 const path = require('path')
 const fs   = require('fs')
 
-const CLIENT_REPO = 'https://github.com/T3CC4/Frostfall-Client.git'
+const CLIENT_REPO = 'https://github.com/F02K/Frostfall-Client.git'
 const CLIENT_DIR  = path.join(__dirname, '..', 'sources', 'client')
 
 // ── Clone or pull ─────────────────────────────────────────────────────────────
