@@ -7,6 +7,9 @@ sources/skse/*.exe
 sources/skse/*.dll
 
 # ── Generated output ───────────────────────────────────────────────────────────
+# Both files are rebuilt by `npm run merge` — do not track them in git.
+public/files/frostfall-client.zip
+data/files-version.json
 # public/files/root/ is rebuilt by the merge pipeline.
 # Uncomment the line below if you prefer to generate it on the server rather
 # than track it in git (requires running `npm run merge` on every deploy).

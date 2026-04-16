@@ -83,11 +83,9 @@ function pullAndMerge() {
 
     console.log('[webhook] git pull:', summary)
 
-    try {
-      mergeSourcesIntoRoot()
-    } catch (mergeErr) {
+    mergeSourcesIntoRoot().catch(mergeErr => {
       console.error('[webhook] merge failed:', mergeErr.message)
-    }
+    })
   })
 }
 
