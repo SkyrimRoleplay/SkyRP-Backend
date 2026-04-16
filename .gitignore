@@ -152,3 +152,6 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+package-lock.json
+sources/skse/Data/Platform/Distribution/RuntimeDependencies/libcef.dll
+sources/skse/Data/Platform/Distribution/RuntimeDependencies/libnode.dll
