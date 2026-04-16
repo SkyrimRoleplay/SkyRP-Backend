@@ -1,4 +1,18 @@
-# Large runtime binaries
+# ── Source directories ─────────────────────────────────────────────────────────
+# Client repo is cloned here by `npm run setup` — not tracked in this repo.
+sources/client/
+
+# SKSE binaries are large and placed manually — only the README is tracked.
+sources/skse/*.exe
+sources/skse/*.dll
+
+# ── Generated output ───────────────────────────────────────────────────────────
+# public/files/root/ is rebuilt by the merge pipeline.
+# Uncomment the line below if you prefer to generate it on the server rather
+# than track it in git (requires running `npm run merge` on every deploy).
+# public/files/root/
+
+# Large runtime binaries (already in the generated root)
 public/files/root/Data/Platform/Distribution/RuntimeDependencies/libcef.dll
 public/files/root/Data/Platform/Distribution/RuntimeDependencies/libnode.dll
 
