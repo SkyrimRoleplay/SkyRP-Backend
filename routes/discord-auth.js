@@ -1,20 +1,36 @@
 const router = require('express').Router()
 const https  = require('https')
+const crypto = require('crypto')
 const config = require('../config')
 
-// GET /auth/discord/url — returns the Discord OAuth authorization URL
-router.get('/url', (_req, res) => {
+// Temporary store: state token → launcher callback URL (10-minute TTL)
+const pendingAuth = new Map()
+
+// GET /auth/discord/url — returns the Discord OAuth authorization URL.
+// Optional ?redirect=<launcher-local-url> — when present the callback route
+// will forward the code there instead of returning a plain page.
+router.get('/url', (req, res) => {
   if (!config.discordClientId) {
     return res.status(503).json({ error: 'Discord auth not configured on this server.' })
   }
+
+  const state = crypto.randomBytes(16).toString('hex')
+
+  if (req.query.redirect) {
+    pendingAuth.set(state, req.query.redirect)
+    setTimeout(() => pendingAuth.delete(state), 10 * 60 * 1000)
+  }
+
   const params = new URLSearchParams({
     client_id:     config.discordClientId,
     redirect_uri:  config.discordRedirectUri,
     response_type: 'code',
     scope:         'identify',
+    state,
   })
   res.json({ url: `https://discord.com/api/oauth2/authorize?${params}` })
 })
+
 
 // GET /auth/discord/exchange?code=... — exchanges code for user info
 router.get('/exchange', async (req, res) => {
@@ -105,3 +121,4 @@ function discordGetUser(accessToken) {
 }
 
 module.exports = router
+module.exports.pendingAuth = pendingAuth

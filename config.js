@@ -20,8 +20,11 @@ module.exports = {
   serverMaxPlayers: parseInt(process.env.SERVER_MAX_PLAYERS || '100', 10),
   serverOfflineMode: process.env.SERVER_OFFLINE_MODE === 'true',
   serverNpcEnabled:  process.env.SERVER_NPC_ENABLED  === 'true',
-  // Short gamemode label shown in the launcher (optional)
-  serverGamemode:   process.env.SERVER_GAMEMODE     || null,
+  serverGamemode:    process.env.SERVER_GAMEMODE     || null,
+  // Master API — used by the SkyMP client for online-mode authentication.
+  // In offline mode these are ignored by the launcher but kept for future use.
+  serverMasterKey:   process.env.SERVER_MASTER_KEY   || '',
+  masterUrl:         process.env.MASTER_URL           || '',
 
   // ── Discord OAuth (launcher login) ──────────────────────────────────────────
   discordClientId:     process.env.DISCORD_CLIENT_ID     || '',

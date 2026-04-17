@@ -10,6 +10,9 @@ router.get('/', (_req, res) => {
     npcEnabled:          config.serverNpcEnabled,
     gamemode:            config.serverGamemode,
     discordAuthRequired: !!config.discordClientId,
+    // Needed by the launcher to write correct skymp5-client-settings.txt
+    masterKey:           config.serverMasterKey  || null,
+    masterUrl:           config.masterUrl         || null,
   })
 })
 
