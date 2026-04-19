@@ -1,5 +1,8 @@
 require('dotenv').config()
 
+// Start WS relay alongside Express (independent port, see WS_PORT in .env)
+require('./sources/wsRelay')
+
 const express  = require('express')
 const cors     = require('cors')
 const path     = require('path')
