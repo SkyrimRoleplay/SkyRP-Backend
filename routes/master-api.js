@@ -113,4 +113,12 @@ router.get('/servers/:key/sessions/:session', (req, res) => {
   })
 })
 
+// Exported so other routes (e.g. serverinfo) can validate sessions without
+// duplicating the store.
+function lookupSession(token) {
+  pruneExpired()
+  return sessions.get(token) || null
+}
+
 module.exports = router
+module.exports.lookupSession = lookupSession

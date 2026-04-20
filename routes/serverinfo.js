@@ -1,7 +1,26 @@
-const router = require('express').Router()
-const config = require('../config')
+const router      = require('express').Router()
+const config      = require('../config')
+const { lookupSession } = require('./master-api')
 
-router.get('/', (_req, res) => {
+router.get('/', (req, res) => {
+  const token = req.headers['x-session']
+
+  let sessionValid = false
+  let allowed      = true   // true when no session provided (offline / launcher handles it)
+
+  if (token) {
+    const entry = lookupSession(token)
+    if (!entry) {
+      sessionValid = false
+      allowed      = false
+    } else {
+      sessionValid = true
+      allowed      = config.serverLocked
+        ? config.serverLockedAllowList.includes(entry.discordId)
+        : true
+    }
+  }
+
   res.json({
     name:                config.serverName,
     maxPlayers:          config.serverMaxPlayers,
@@ -10,13 +29,13 @@ router.get('/', (_req, res) => {
     npcEnabled:          config.serverNpcEnabled,
     gamemode:            config.serverGamemode,
     discordAuthRequired: !!config.discordClientId,
-    // Needed by the launcher to write correct skymp5-client-settings.txt
     masterKey:           config.serverMasterKey  || null,
     masterUrl:           config.masterUrl         || null,
-    // Lockdown state — launcher uses this to show an indicator and block Play
     locked:              config.serverLocked,
-    // Discord user IDs that may still connect even when the server is locked.
     lockedAllowList:     config.serverLockedAllowList,
+    // Session-aware fields — only meaningful when X-Session header is present
+    sessionValid,
+    allowed,
   })
 })
 
