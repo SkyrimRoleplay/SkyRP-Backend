@@ -31,7 +31,7 @@ app.use(express.json({
   verify: (req, _res, buf) => { req.rawBody = buf },
 }))
 
-// Static file serving — root/ is installed into Skyrim/ (Data/ sub-dir + SKSE base files)
+// Static file serving — root/ is installed into Skyrim/ (Data/ sub-dir)
 app.use('/files/root', express.static(path.join(__dirname, 'public', 'files', 'root')))
 
 app.use('/api/news',       newsRoute)

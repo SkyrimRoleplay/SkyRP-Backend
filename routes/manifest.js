@@ -5,7 +5,7 @@ const crypto = require('crypto')
 
 const FILES_ROOT = path.join(__dirname, '..', 'public', 'files')
 
-// root/ → installed into {skyrimPath}/   (Data/ sub-dir + SKSE base files)
+// root/ → installed into {skyrimPath}/   (Data/ sub-dir)
 const BUCKETS = [
   { dir: path.join(FILES_ROOT, 'root'), urlBase: '/files/root', destBase: '' },
 ]
