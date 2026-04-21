@@ -19,6 +19,8 @@ const filesRoute      = require('./routes/files')
 const modlistRoute    = require('./routes/modlist')
 const serversRoute    = require('./routes/servers')
 const webhookRoute    = require('./routes/webhook')
+const adminRoute      = require('./routes/admin')
+const dashAuthRoute   = require('./routes/dashboard-auth')
 
 const app  = express()
 const PORT = process.env.PORT || 4000
@@ -47,6 +49,8 @@ app.use('/auth/discord',   discordRoute)
 app.use('/auth',           masterApiRoute)   // POST /auth/session
 app.use('/api/servers',    masterApiRoute)   // GET  /api/servers/:key/sessions/:session
 app.use('/webhooks',       webhookRoute)
+app.use('/api/admin',         adminRoute)
+app.use('/auth/dashboard',    dashAuthRoute)
 
 // GET /auth/callback — Discord's registered redirect URI.
 // Forwards the code back to the launcher's local server when the request

@@ -37,6 +37,20 @@ module.exports = {
   metricsUser:     process.env.METRICS_USER     || '',
   metricsPassword: process.env.METRICS_PASSWORD || '',
 
+  // ── Admin service ───────────────────────────────────────────────────────────
+  adminUrl:   process.env.ADMIN_URL   || 'http://localhost:5001',
+  adminToken: process.env.ADMIN_TOKEN || '',
+
+  // ── Dashboard auth ──────────────────────────────────────────────────────────
+  // Comma-separated Discord user IDs allowed to access the admin dashboard.
+  dashboardDiscordIds: (process.env.DASHBOARD_DISCORD_IDS || '')
+    .split(',').map(s => s.trim()).filter(Boolean),
+  // OAuth redirect URI registered in the Discord application for the dashboard.
+  discordDashboardRedirectUri: process.env.DISCORD_DASHBOARD_REDIRECT_URI
+    || 'http://localhost:4000/auth/dashboard/callback',
+  // Public URL of the website (used to redirect back after OAuth).
+  websiteUrl: process.env.WEBSITE_URL || 'http://localhost:4001',
+
   // ── Server lockdown ─────────────────────────────────────────────────────────
   // When true, only Discord users whose IDs appear in serverLockedAllowList
   // can connect.  Everyone else receives loginFailedServerLocked from the TS
