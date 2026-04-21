@@ -2,6 +2,15 @@ const router      = require('express').Router()
 const config      = require('../config')
 const { lookupSession } = require('./master-api')
 const { getHeartbeat }  = require('./servers')
+const fs          = require('fs')
+const path        = require('path')
+
+const PUBLIC_KEYS_PATH = path.join(__dirname, '..', 'data', 'public-keys.json')
+
+function loadPublicKeys() {
+  try { return JSON.parse(fs.readFileSync(PUBLIC_KEYS_PATH, 'utf8')) }
+  catch { return null }
+}
 
 router.get('/', (req, res) => {
   const token = req.headers['x-session']
@@ -39,6 +48,7 @@ router.get('/', (req, res) => {
     // Session-aware fields — only meaningful when X-Session header is present
     sessionValid,
     allowed,
+    publicKeys: loadPublicKeys(),
   })
 })
 

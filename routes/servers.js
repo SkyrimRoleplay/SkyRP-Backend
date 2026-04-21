@@ -19,6 +19,15 @@ router.get('/', (_req, res) => {
   ])
 })
 
+// Called by the SkyMP client to fetch the server's mod list.
+// Returns a v1 SkyMP server manifest so the client doesn't loop on 404s.
+router.get('/:key/manifest.json', (req, res) => {
+  if (req.params.key !== config.serverMasterKey) {
+    return res.status(403).json({ error: 'Invalid master key.' })
+  }
+  res.json({ versionMajor: 1, mods: [] })
+})
+
 // Called by MasterClient every 5 s: POST /api/servers/:key
 // Body: { name, maxPlayers, online }
 router.post('/:key', (req, res) => {
