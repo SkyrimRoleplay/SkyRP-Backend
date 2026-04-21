@@ -36,6 +36,9 @@ app.use(express.json({
 // Static file serving — root/ is installed into Skyrim/ (Data/ sub-dir)
 app.use('/files/root', express.static(path.join(__dirname, 'public', 'files', 'root')))
 
+// News images — served at /images/<filename>
+app.use('/images', express.static(path.join(__dirname, 'public', 'images')))
+
 app.use('/api/news',       newsRoute)
 app.use('/api/status',     statusRoute)
 app.use('/api/manifest',   manifestRoute)
