@@ -21,6 +21,7 @@ const serversRoute    = require('./routes/servers')
 const webhookRoute    = require('./routes/webhook')
 const adminRoute      = require('./routes/admin')
 const dashAuthRoute   = require('./routes/dashboard-auth')
+const skympCompatRoute = require('./routes/skymp-compat')
 
 const app  = express()
 const PORT = process.env.PORT || 4000
@@ -48,6 +49,9 @@ app.use('/api/metrics',    metricsRoute)
 app.use('/api/files',     filesRoute)
 app.use('/api/modlist',   modlistRoute)
 app.use('/api/servers',   serversRoute)
+// SkyMP client Master-API compatibility (must be mounted before /auth/discord
+// so /api/users/login-discord/status is not swallowed by a shorter prefix)
+app.use('/api/users',      skympCompatRoute)
 app.use('/auth/discord',   discordRoute)
 app.use('/auth',           masterApiRoute)   // POST /auth/session
 app.use('/api/servers',    masterApiRoute)   // GET  /api/servers/:key/sessions/:session
