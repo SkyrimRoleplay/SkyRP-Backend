@@ -7,20 +7,19 @@ const express  = require('express')
 const cors     = require('cors')
 const path     = require('path')
 
-const newsRoute       = require('./routes/news')
-const statusRoute     = require('./routes/status')
-const manifestRoute   = require('./routes/manifest')
-const versionRoute    = require('./routes/version')
-const serverinfoRoute = require('./routes/serverinfo')
-const metricsRoute    = require('./routes/metrics')
-const discordRoute    = require('./routes/discord-auth')
-const masterApiRoute  = require('./routes/master-api')
-const filesRoute      = require('./routes/files')
-const modlistRoute    = require('./routes/modlist')
-const serversRoute    = require('./routes/servers')
-const webhookRoute    = require('./routes/webhook')
-const adminRoute      = require('./routes/admin')
-const dashAuthRoute   = require('./routes/dashboard-auth')
+const newsRoute        = require('./routes/news')
+const statusRoute      = require('./routes/status')
+const manifestRoute    = require('./routes/manifest')
+const versionRoute     = require('./routes/version')
+const serverinfoRoute  = require('./routes/serverinfo')
+const metricsRoute     = require('./routes/metrics')
+const masterApiRoute   = require('./routes/master-api')
+const filesRoute       = require('./routes/files')
+const modlistRoute     = require('./routes/modlist')
+const serversRoute     = require('./routes/servers')
+const webhookRoute     = require('./routes/webhook')
+const adminRoute       = require('./routes/admin')
+const dashAuthRoute    = require('./routes/dashboard-auth')
 const skympCompatRoute = require('./routes/skymp-compat')
 
 const app  = express()
@@ -46,51 +45,17 @@ app.use('/api/manifest',   manifestRoute)
 app.use('/api/version',    versionRoute)
 app.use('/api/serverinfo', serverinfoRoute)
 app.use('/api/metrics',    metricsRoute)
-app.use('/api/files',     filesRoute)
-app.use('/api/modlist',   modlistRoute)
-app.use('/api/servers',   serversRoute)
-// SkyMP client Master-API compatibility (must be mounted before /auth/discord
-// so /api/users/login-discord/status is not swallowed by a shorter prefix)
+app.use('/api/files',      filesRoute)
+app.use('/api/modlist',    modlistRoute)
+app.use('/api/servers',    serversRoute)
+// SkyMP client Master-API compatibility — must be mounted before /api/servers
+// so /api/users/login-discord/status is not swallowed by a shorter prefix.
 app.use('/api/users',      skympCompatRoute)
-app.use('/auth/discord',   discordRoute)
 app.use('/auth',           masterApiRoute)   // POST /auth/session
 app.use('/api/servers',    masterApiRoute)   // GET  /api/servers/:key/sessions/:session
 app.use('/webhooks',       webhookRoute)
-app.use('/api/admin',         adminRoute)
-app.use('/auth/dashboard',    dashAuthRoute)
-
-// GET /auth/callback — Discord's registered redirect URI.
-// Forwards the code back to the launcher's local server when the request
-// came from the launcher. For in-game clients (no redirect), exchanges the
-// code and stores the session so the client can poll /auth/discord/status.
-app.get('/auth/callback', async (req, res) => {
-  const { code, state } = req.query
-  const launcherRedirect = discordRoute.pendingAuth.get(state)
-  discordRoute.pendingAuth.delete(state)
-
-  if (!code) {
-    return res.status(400).send('Missing authorization code.')
-  }
-
-  if (launcherRedirect) {
-    try {
-      const dest = new URL(launcherRedirect)
-      dest.searchParams.set('code', code)
-      return res.redirect(dest.toString())
-    } catch {
-      return res.status(400).send('Invalid launcher redirect URL.')
-    }
-  }
-
-  // In-game client flow: complete the OAuth exchange and store session for polling
-  try {
-    await discordRoute.handleInGameCallback(code, state)
-  } catch (err) {
-    console.error('In-game auth callback error:', err)
-  }
-
-  res.send('Authorised. You can close this tab.')
-})
+app.use('/api/admin',      adminRoute)
+app.use('/auth/dashboard', dashAuthRoute)
 
 app.listen(PORT, () => {
   console.log(`Frostfall backend running on http://localhost:${PORT}`)

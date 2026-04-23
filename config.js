@@ -31,7 +31,7 @@ module.exports = {
   discordClientId:     process.env.DISCORD_CLIENT_ID     || '',
   discordClientSecret: process.env.DISCORD_CLIENT_SECRET || '',
   // Redirect URI registered in the Discord application settings
-  discordRedirectUri:  process.env.DISCORD_REDIRECT_URI  || 'http://localhost:4000/auth/callback',
+  discordRedirectUri:  process.env.DISCORD_REDIRECT_URI  || 'http://localhost:4000/api/users/login-discord/callback',
 
   // ── Metrics HTTP auth (Basic auth for the game server's /metrics endpoint) ──
   metricsUser:     process.env.METRICS_USER     || '',
