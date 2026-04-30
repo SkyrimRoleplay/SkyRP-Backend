@@ -12,7 +12,7 @@ const crypto                  = require('crypto')
 const config                  = require('../config')
 const sessions                = require('../sources/dashboardSessions')
 const discordBot              = require('../sources/discordBot')
-const { resolvePermissions }  = require('../sources/permissions')
+const { resolvePermissions, hasPermission } = require('../sources/permissions')
 
 const router  = Router()
 
@@ -74,10 +74,13 @@ router.get('/callback', async (req, res) => {
 
     const roleIds     = await discordBot.getMemberRoles(user.id)
     const permissions = resolvePermissions(roleIds)
+    if (config.dashboardDiscordIds.includes(user.id) && !permissions.includes('admin.*')) {
+      permissions.push('admin.*')
+    }
 
-    // Allow access if the user has at least one recognised role-based permission,
-    // or if they're in the legacy DASHBOARD_DISCORD_IDS allowlist.
-    const isAllowed = permissions.length > 0 || config.dashboardDiscordIds.includes(user.id)
+    // Allow access through a configurable dashboard permission, or through the
+    // legacy DASHBOARD_DISCORD_IDS allowlist.
+    const isAllowed = hasPermission(permissions, 'dashboard.access') || config.dashboardDiscordIds.includes(user.id)
     if (!isAllowed) {
       return res.redirect(pend.redirectUrl + '?error=unauthorized')
     }

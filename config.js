@@ -42,6 +42,9 @@ module.exports = {
   adminToken: process.env.ADMIN_TOKEN || '',
 
   // ── Dashboard auth ──────────────────────────────────────────────────────────
+  dashboardPort: parseInt(process.env.DASHBOARD_PORT || '4002', 10),
+  dashboardPublicUrl: process.env.DASHBOARD_PUBLIC_URL || 'http://localhost:4002',
+  dashboardApiBaseUrl: process.env.DASHBOARD_API_BASE_URL || `http://localhost:${process.env.PORT || 4000}`,
   // Comma-separated Discord user IDs allowed to access the admin dashboard.
   dashboardDiscordIds: (process.env.DASHBOARD_DISCORD_IDS || '')
     .split(',').map(s => s.trim()).filter(Boolean),
@@ -65,8 +68,14 @@ module.exports = {
   // Comma-separated list of Discord snowflake IDs that may still connect.
   serverLockedAllowList: (process.env.SERVER_LOCKED_ALLOW || '')
     .split(',').map(s => s.trim()).filter(Boolean),
+  // Comma-separated Discord role IDs that may connect while SERVER_LOCKED=true.
+  serverLockedRoleIds: (process.env.SERVER_LOCKED_ROLE_IDS || '')
+    .split(',').map(s => s.trim()).filter(Boolean),
 
   // Discord role used as the gameplay whitelist. When set, this replaces
   // data/whitelist.json as the source of truth for who may join.
   whitelistRoleId: process.env.WHITELIST_ROLE_ID || '',
+
+  // Discord role used as the gameplay ban list. Users with this role cannot join.
+  bannedRoleId: process.env.BANNED_ROLE_ID || process.env.BAN_ROLE_ID || '',
 }

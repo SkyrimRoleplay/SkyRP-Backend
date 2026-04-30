@@ -1,4 +1,19 @@
-require('dotenv').config()
+const fs = require('fs')
+const path = require('path')
+const dotenv = require('dotenv')
+
+dotenv.config()
+
+const sharedEnvPath = process.env.FROSTFALL_SHARED_ENV
+  || path.join(process.env.USERPROFILE || '', 'Documents', '.env')
+if (sharedEnvPath && fs.existsSync(sharedEnvPath)) {
+  const sharedEnv = dotenv.parse(fs.readFileSync(sharedEnvPath))
+  for (const [key, value] of Object.entries(sharedEnv)) {
+    if (process.env[key] === undefined || process.env[key] === '') {
+      process.env[key] = value
+    }
+  }
+}
 
 // Start WS relay alongside Express (independent port, see WS_PORT in .env)
 require('./sources/wsRelay')
@@ -7,9 +22,12 @@ require('./sources/wsRelay')
 const discordBot = require('./sources/discordBot')
 discordBot.start()
 
+// Start the management dashboard on its own port/subdomain target.
+const dashboardServer = require('./sources/dashboardServer')
+dashboardServer.start()
+
 const express  = require('express')
 const cors     = require('cors')
-const path     = require('path')
 
 const newsRoute        = require('./routes/news')
 const statusRoute      = require('./routes/status')
@@ -29,6 +47,10 @@ const loreRoute            = require('./routes/lore')
 const rulesRoute           = require('./routes/rules')
 const whitelistRoute       = require('./routes/whitelist')
 const whitelistNotesRoute  = require('./routes/whitelist-notes')
+const factionWhitelistRoute = require('./routes/faction-whitelist')
+const rolePermissionsRoute  = require('./routes/role-permissions')
+const serverAccessRoute     = require('./routes/server-access')
+const playersRoute          = require('./routes/players')
 
 const app  = express()
 const PORT = process.env.PORT || 4000
@@ -68,6 +90,10 @@ app.use('/api/lore',            loreRoute)
 app.use('/api/rules',           rulesRoute)
 app.use('/api/whitelist',       whitelistRoute)
 app.use('/api/whitelist-notes', whitelistNotesRoute)
+app.use('/api/faction-whitelist', factionWhitelistRoute)
+app.use('/api/role-permissions',  rolePermissionsRoute)
+app.use('/api/server-access',      serverAccessRoute)
+app.use('/api/players',            playersRoute)
 
 app.listen(PORT, () => {
   console.log(`Frostfall backend running on http://localhost:${PORT}`)

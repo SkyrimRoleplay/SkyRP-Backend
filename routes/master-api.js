@@ -32,6 +32,14 @@
  *     Called by the game server in offline mode to verify a profileId is allowed.
  *     Applies the same lock / whitelist rules as session validation.
  *     Returns: { allowed: true }  or  403/404 with { error }
+ *
+ *   POST /api/servers/:key/profiles/:profileId/factions
+ *     Called by the game server for immersive in-game faction appointments.
+ *     Requires X-Auth-Token. Body: { requirementId, playerName?, notes? }
+ *
+ *   DELETE /api/servers/:key/profiles/:profileId/factions/:assignmentId
+ *     Called by the game server to remove one official backend faction slot.
+ *     Requires X-Auth-Token.
  */
 
 const router = require('express').Router()
@@ -39,35 +47,10 @@ const crypto = require('crypto')
 const fs     = require('fs')
 const path   = require('path')
 const config = require('../config')
-const discordBot = require('../sources/discordBot')
-
-// ── Persistent Discord → profileId mapping ────────────────────────────────────
-
-const PROFILES_PATH = path.join(__dirname, '..', 'data', 'profiles.json')
-
-function loadProfiles() {
-  try { return JSON.parse(fs.readFileSync(PROFILES_PATH, 'utf8')) }
-  catch { return { nextId: 1, map: {} } }
-}
-
-function saveProfiles(data) {
-  fs.writeFileSync(PROFILES_PATH, JSON.stringify(data, null, 2) + '\n')
-}
-
-function getOrCreateProfileId(discordId) {
-  const data = loadProfiles()
-  if (!data.map[discordId]) {
-    data.map[discordId] = data.nextId++
-    saveProfiles(data)
-  }
-  return data.map[discordId]
-}
-
-function getDiscordIdByProfileId(profileId) {
-  const data = loadProfiles()
-  const entry = Object.entries(data.map).find(([, id]) => id === profileId)
-  return entry ? entry[0] : null
-}
+const factionWhitelist = require('../sources/factionWhitelist')
+const serverAccess = require('../sources/serverAccess')
+const profiles = require('../sources/profiles')
+const players  = require('../sources/players')
 
 // ── Persistent balance store — profileId → coin balance ──────────────────────
 
@@ -92,24 +75,6 @@ function setBalance(profileId, balance) {
   const data = loadBalances()
   data[profileId] = balance
   saveBalances(data)
-}
-
-// ── Persistent whitelist — Discord IDs allowed when server is unlocked ────────
-
-const WHITELIST_PATH = path.join(__dirname, '..', 'data', 'whitelist.json')
-
-function loadWhitelist() {
-  try { return JSON.parse(fs.readFileSync(WHITELIST_PATH, 'utf8')) }
-  catch { return [] }
-}
-
-async function isDiscordWhitelisted(discordId) {
-  if (config.whitelistRoleId) {
-    return discordBot.memberHasRole(discordId, config.whitelistRoleId)
-  }
-
-  const whitelist = loadWhitelist()
-  return whitelist.length === 0 || whitelist.includes(discordId)
 }
 
 // ── In-memory session store — used for online-mode validation only ────────────
@@ -160,11 +125,45 @@ function checkKey(req, res) {
   return true
 }
 
+function checkWriteToken(req, res) {
+  const authToken = req.headers['x-auth-token']
+  if (!authToken || authToken !== config.masterApiAuthToken) {
+    res.status(403).json({ error: 'Invalid auth token.' })
+    return false
+  }
+  return true
+}
+
+function getProfileDiscordId(req, res) {
+  const profileId = parseInt(req.params.profileId, 10)
+  if (isNaN(profileId)) {
+    res.status(400).json({ error: 'Invalid profileId.' })
+    return null
+  }
+
+  const discordId = profiles.getDiscordIdByProfileId(profileId)
+  if (!discordId) {
+    res.status(404).json({ error: 'profileNotFound' })
+    return null
+  }
+
+  return discordId
+}
+
+function getProfileFactionPayload(discordId) {
+  return {
+    permissions: factionWhitelist.getPlayerFactionPermissions(discordId),
+    gameFactions: factionWhitelist.getPlayerGameFactions(discordId),
+    factions: factionWhitelist.getPlayerAssignments(discordId),
+  }
+}
+
 // ── Session creation helper (used by POST /auth/session and discord-auth callback) ─
 
 function createSession(discordUser) {
   pruneExpired()
-  const profileId = getOrCreateProfileId(discordUser.id)
+  const player = players.upsertFromDiscordUser(discordUser)
+  const profileId = player.profileId
   const token = crypto.randomBytes(32).toString('hex')
   sessions.set(token, {
     profileId,
@@ -197,17 +196,16 @@ router.get('/:key/sessions/:session', async (req, res) => {
   if (!entry)
     return res.status(404).json({ error: 'Session not found or expired.' })
 
-  if (config.serverLocked) {
-    if (!config.serverLockedAllowList.includes(entry.discordId))
-      return res.status(403).json({ error: 'serverLocked' })
-  } else {
-    try {
-      if (!await isDiscordWhitelisted(entry.discordId))
-        return res.status(403).json({ error: 'notWhitelisted' })
-    } catch (err) {
-      console.error('[master-api] whitelist role check failed:', err.message)
-      return res.status(503).json({ error: 'whitelistUnavailable' })
-    }
+  let access
+  try {
+    access = await serverAccess.getDiscordAccess(entry.discordId)
+  } catch (err) {
+    console.error('[master-api] access role check failed:', err.message)
+    return res.status(503).json({ error: 'accessUnavailable' })
+  }
+
+  if (!access.allowed) {
+    return res.status(403).json({ error: access.error || 'accessDenied' })
   }
 
   res.json({
@@ -215,6 +213,10 @@ router.get('/:key/sessions/:session', async (req, res) => {
       id:        entry.profileId,
       discordId: entry.discordId,
       username:  entry.username,
+      roles:     access.roles,
+      permissions: factionWhitelist.getPlayerFactionPermissions(entry.discordId),
+      gameFactions: factionWhitelist.getPlayerGameFactions(entry.discordId),
+      factions: factionWhitelist.getPlayerAssignments(entry.discordId),
     },
   })
 })
@@ -225,28 +227,72 @@ router.get('/:key/sessions/:session', async (req, res) => {
 router.get('/:key/profiles/:profileId/check', async (req, res) => {
   if (!checkKey(req, res)) return
 
-  const profileId = parseInt(req.params.profileId, 10)
-  if (isNaN(profileId))
-    return res.status(400).json({ error: 'Invalid profileId.' })
+  const discordId = getProfileDiscordId(req, res)
+  if (!discordId) return
 
-  const discordId = getDiscordIdByProfileId(profileId)
-  if (!discordId)
-    return res.status(404).json({ error: 'profileNotFound' })
-
-  if (config.serverLocked) {
-    if (!config.serverLockedAllowList.includes(discordId))
-      return res.status(403).json({ error: 'serverLocked' })
-  } else {
-    try {
-      if (!await isDiscordWhitelisted(discordId))
-        return res.status(403).json({ error: 'notWhitelisted' })
-    } catch (err) {
-      console.error('[master-api] offline whitelist role check failed:', err.message)
-      return res.status(503).json({ error: 'whitelistUnavailable' })
-    }
+  let access
+  try {
+    access = await serverAccess.getDiscordAccess(discordId)
+  } catch (err) {
+    console.error('[master-api] offline access role check failed:', err.message)
+    return res.status(503).json({ error: 'accessUnavailable' })
   }
 
-  res.json({ allowed: true })
+  if (!access.allowed) {
+    return res.status(403).json({ error: access.error || 'accessDenied' })
+  }
+
+  res.json({
+    allowed: true,
+    roles: access.roles,
+    ...getProfileFactionPayload(discordId),
+  })
+})
+
+// â”€â”€ POST /api/servers/:key/profiles/:profileId/factions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+router.post('/:key/profiles/:profileId/factions', (req, res) => {
+  if (!checkKey(req, res) || !checkWriteToken(req, res)) return
+
+  const discordId = getProfileDiscordId(req, res)
+  if (!discordId) return
+
+  try {
+    const assignment = factionWhitelist.createAssignment({
+      ...req.body,
+      discordId,
+    }, 'skymp-server')
+    res.status(201).json({
+      assignment,
+      ...getProfileFactionPayload(discordId),
+    })
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || 'failed to assign faction' })
+  }
+})
+
+// â”€â”€ DELETE /api/servers/:key/profiles/:profileId/factions/:assignmentId â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+router.delete('/:key/profiles/:profileId/factions/:assignmentId', (req, res) => {
+  if (!checkKey(req, res) || !checkWriteToken(req, res)) return
+
+  const discordId = getProfileDiscordId(req, res)
+  if (!discordId) return
+
+  try {
+    const belongsToPlayer = factionWhitelist
+      .getPlayerAssignments(discordId)
+      .some(assignment => assignment.id === req.params.assignmentId)
+    if (!belongsToPlayer) return res.status(404).json({ error: 'assignment not found for player' })
+
+    factionWhitelist.deleteAssignment(req.params.assignmentId)
+    res.json({
+      ok: true,
+      ...getProfileFactionPayload(discordId),
+    })
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || 'failed to remove faction' })
+  }
 })
 
 // ── GET /api/servers/:key/sessions/:session/balance ───────────────────────────
@@ -268,9 +314,7 @@ router.get('/:key/sessions/:session/balance', (req, res) => {
 router.post('/:key/sessions/:session/purchase', (req, res) => {
   if (!checkKey(req, res)) return
 
-  const authToken = req.headers['x-auth-token']
-  if (!authToken || authToken !== config.masterApiAuthToken)
-    return res.status(403).json({ error: 'Invalid auth token.' })
+  if (!checkWriteToken(req, res)) return
 
   pruneExpired()
   const entry = sessions.get(req.params.session)
@@ -291,6 +335,4 @@ router.post('/:key/sessions/:session/purchase', (req, res) => {
 
 module.exports = router
 module.exports.lookupSession  = lookupSession
-module.exports.loadWhitelist  = loadWhitelist
-module.exports.isDiscordWhitelisted = isDiscordWhitelisted
 module.exports.createSession  = createSession

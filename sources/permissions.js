@@ -15,6 +15,43 @@ function _load() {
   }
 }
 
+function _save(config) {
+  fs.writeFileSync(FILE, JSON.stringify(config, null, 2) + '\n')
+}
+
+function listRolePermissions() {
+  return _load()
+}
+
+function setRolePermissions(roleId, name, permissions) {
+  const normalizedRoleId = String(roleId || '').trim()
+  if (!normalizedRoleId) {
+    const err = new Error('roleId is required')
+    err.status = 400
+    throw err
+  }
+  if (!Array.isArray(permissions)) {
+    const err = new Error('permissions must be an array')
+    err.status = 400
+    throw err
+  }
+
+  const config = _load()
+  if (!config.roles) config.roles = {}
+  config.roles[normalizedRoleId] = {
+    name: String(name || normalizedRoleId).trim(),
+    permissions: [...new Set(permissions.map(p => String(p || '').trim()).filter(Boolean))],
+  }
+  _save(config)
+  return config.roles[normalizedRoleId]
+}
+
+function deleteRolePermissions(roleId) {
+  const config = _load()
+  if (config.roles) delete config.roles[String(roleId || '').trim()]
+  _save(config)
+}
+
 /**
  * Given an array of Discord role ID strings, returns a deduplicated flat array
  * of permission strings based on the role-permissions config.
@@ -43,4 +80,10 @@ function hasPermission(permissions, required) {
   return permissions.includes(required)
 }
 
-module.exports = { resolvePermissions, hasPermission }
+module.exports = {
+  listRolePermissions,
+  setRolePermissions,
+  deleteRolePermissions,
+  resolvePermissions,
+  hasPermission,
+}

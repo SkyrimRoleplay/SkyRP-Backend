@@ -2,7 +2,20 @@
   "roles": {
     "1494340623531118702": {
       "name": "Management",
-      "permissions": ["admin.*", "lore.write", "rules.write", "staff.whitelist_info"]
+      "permissions": [
+        "admin.*",
+        "dashboard.access",
+        "permissions.manage",
+        "players.view",
+        "players.manage",
+        "server.access.view",
+        "server.access.manage",
+        "factions.view",
+        "factions.manage",
+        "lore.write",
+        "rules.write",
+        "staff.whitelist_info"
+      ]
     },
     "1494298915120611328": {
       "name": "Lore Master",

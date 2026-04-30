@@ -3,14 +3,15 @@
 // of truth, and future character/race locks can hang off this response shape.
 
 const { Router }        = require('express')
-const config            = require('../config')
 const discordBot        = require('../sources/discordBot')
 const requirePermission = require('../middleware/requirePermission')
+const serverAccess      = require('../sources/serverAccess')
 
 const router = Router()
 
 router.get('/', requirePermission('staff.whitelist_info'), async (_req, res) => {
-  if (!config.whitelistRoleId) {
+  const access = serverAccess.load()
+  if (!access.whitelistRoleId) {
     return res.json({
       source: 'file',
       roleId: null,
@@ -20,10 +21,10 @@ router.get('/', requirePermission('staff.whitelist_info'), async (_req, res) => 
   }
 
   try {
-    const members = await discordBot.getMembersWithRole(config.whitelistRoleId)
+    const members = await discordBot.getMembersWithRole(access.whitelistRoleId)
     res.json({
       source: 'discord-role',
-      roleId: config.whitelistRoleId,
+      roleId: access.whitelistRoleId,
       count: members.length,
       players: members.map(member => ({
         ...member,
