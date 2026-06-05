@@ -3,14 +3,30 @@ const net    = require('net')
 const http   = require('http')
 const config = require('../config')
 
-// TCP reachability check for the game port
-function tcpCheck(host, port) {
+// UDP reachability check for the game port
+// TCP wasnt working lul
+function udpCheck(host, port) {
   return new Promise(resolve => {
-    const socket = new net.Socket()
-    socket.setTimeout(3000)
-    socket.connect(port, host, () => { socket.destroy(); resolve(true) })
-    socket.on('error',   () => resolve(false))
-    socket.on('timeout', () => { socket.destroy(); resolve(false) })
+    const dgram = require('dgram')
+    const socket = dgram.createSocket('udp4')
+    const msg = Buffer.from('ping')
+    let resolved = false
+
+    const done = (result) => {
+      if (resolved) return
+      resolved = true
+      try { socket.close() } catch {}
+      resolve(result)
+    }
+
+    socket.on('error', () => done(false))
+
+    socket.send(msg, 0, msg.length, port, host, (err) => {
+      if (err) return done(false)
+      done(true)
+    })
+
+    setTimeout(() => done(false), 3000)
   })
 }
 
