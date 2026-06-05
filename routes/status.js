@@ -61,7 +61,7 @@ function fetchPlayerCount(host, uiPort) {
 
 router.get('/', async (_req, res) => {
   const { skyrimServerHost: host, skyrimServerPort: gamePort, skympUiPort: uiPort } = config
-  const online  = await tcpCheck(host, gamePort)
+  const online  = await udpCheck(host, gamePort)
   const players = online ? await fetchPlayerCount(host, uiPort) : null
   res.json({ status: online ? 'online' : 'offline', players })
 })
