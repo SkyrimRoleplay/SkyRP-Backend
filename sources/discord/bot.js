@@ -32,14 +32,21 @@ async function getMemberRoles(discordId) {
   if (ready) {
     try {
       const guild = await client.guilds.fetch(config.discordGuildId)
-      const member = await guild.members.fetch(discordId)
+      const member = await guild.members.fetch({ user: discordId, force: true })
       return [...member.roles.cache.keys()]
     } catch (err) {
-      if (err && err.code === 10007) return []
+      if (err && err.code === 10007) return []  // genuinely not in server
+      console.warn('[discord-bot] guild fetch failed, falling back to HTTP:', err.message)
+      // Fall through to HTTP fallback below
     }
   }
 
-  return fetchMemberRoles(discordId)
+  try {
+    return await fetchMemberRoles(discordId)
+  } catch (err) {
+    console.error('[discord-bot] HTTP fallback also failed:', err.message)
+    return []
+  }
 }
 
 function isReady() {
