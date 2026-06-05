@@ -4,16 +4,13 @@ const dotenv = require('dotenv')
 
 dotenv.config()
 
-const sharedEnvPath = process.env.FROSTFALL_SHARED_ENV
-  || path.join(process.env.USERPROFILE || '', 'Documents', '.env')
-if (sharedEnvPath && fs.existsSync(sharedEnvPath)) {
-  const sharedEnv = dotenv.parse(fs.readFileSync(sharedEnvPath))
-  for (const [key, value] of Object.entries(sharedEnv)) {
-    if (process.env[key] === undefined || process.env[key] === '') {
-      process.env[key] = value
-    }
-  }
-}
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException] Server kept alive:', err.message)
+})
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection] Server kept alive:', reason)
+})
 
 // Start WS relay alongside Express (independent port, see WS_PORT in .env)
 require('./sources/wsRelay')
