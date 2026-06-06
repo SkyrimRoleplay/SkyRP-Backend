@@ -93,5 +93,5 @@ app.use('/api/server-access',      serverAccessRoute)
 app.use('/api/players',            playersRoute)
 
 app.listen(PORT, () => {
-  console.log(`Frostfall backend running on http://localhost:${PORT}`)
+  console.log(`SkyRP backend running on http://localhost:${PORT}`)
 })

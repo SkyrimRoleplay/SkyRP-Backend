@@ -24,7 +24,7 @@ module.exports = {
   // Master API — used by the SkyMP client for online-mode authentication.
   // In offline mode these are ignored by the launcher but kept for future use.
   serverMasterKey:    process.env.SERVER_MASTER_KEY    || '',
-  masterUrl:          process.env.MASTER_URL           || 'https://api.frostfall.online',
+  masterUrl:          process.env.MASTER_URL           || 'https://api.skyrimroleplay.co.uk/',
   masterApiAuthToken: process.env.MASTER_API_AUTH_TOKEN || '',
 
   // ── Discord OAuth (launcher login) ──────────────────────────────────────────
