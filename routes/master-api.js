@@ -343,3 +343,4 @@ async function isDiscordWhitelisted(discordId) {
 module.exports = router
 module.exports.lookupSession  = lookupSession
 module.exports.createSession  = createSession
+module.exports.isDiscordWhitelisted = isDiscordWhitelisted
