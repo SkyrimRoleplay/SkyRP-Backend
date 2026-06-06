@@ -333,6 +333,13 @@ router.post('/:key/sessions/:session/purchase', (req, res) => {
   res.json({ balanceSpent: balanceToSpend, success: true })
 })
 
+// Fix for whitelist issues
+async function isDiscordWhitelisted(discordId) {
+  const serverAccess = require('../sources/serverAccess')
+  const result = await serverAccess.getDiscordAccess(discordId)
+  return result.allowed === true
+}
+
 module.exports = router
 module.exports.lookupSession  = lookupSession
 module.exports.createSession  = createSession
