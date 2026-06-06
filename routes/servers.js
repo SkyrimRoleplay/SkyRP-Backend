@@ -1,4 +1,4 @@
-'use strict'
+here'use strict'
 
 const router = require('express').Router()
 const config = require('../config')
@@ -10,7 +10,7 @@ router.get('/', (_req, res) => {
   res.json([
     {
       name:    heartbeat?.name    ?? config.serverName,
-      address: config.skyrimServerHost,
+      address: config.skyrimServerAddress,
       port:    config.skyrimServerPort,
       online:  heartbeat?.online  ?? null,
       maxPlayers: heartbeat?.maxPlayers ?? config.serverMaxPlayers,
@@ -53,7 +53,7 @@ router.get('/:key/serverinfo', async (req, res) => {
   }
 
   res.json({
-    host:        config.skyrimServerHost,
+    host:        config.skyrimServerAddress,
     port:        config.skyrimServerPort,
     name:        heartbeat?.name       ?? config.serverName,
     maxPlayers:  heartbeat?.maxPlayers ?? config.serverMaxPlayers,
