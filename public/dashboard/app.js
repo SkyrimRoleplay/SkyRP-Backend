@@ -1,6 +1,6 @@
-const config = window.FROSTFALL_DASHBOARD_CONFIG || {}
+const config = window.SkyRP_DASHBOARD_CONFIG || {}
 const apiBaseUrl = (config.apiBaseUrl || '').replace(/\/$/, '')
-const tokenKey = 'frostfall.dashboard.token'
+const tokenKey = 'skyrp.dashboard.token'
 
 const state = {
   token: localStorage.getItem(tokenKey) || '',
